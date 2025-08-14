@@ -1,20 +1,20 @@
-version: "3.8"
-
 services:
   excalidraw:
     build:
       context: .
       args:
-        - NODE_ENV=development
+        - NODE_ENV=production
     container_name: excalidraw
     ports:
-      - "3000:80"
+      - "3003:80"
+    networks:
+      - dokploy-network
     restart: on-failure
     stdin_open: true
     healthcheck:
       disable: true
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     volumes:
       - ./:/opt/node_app/app:delegated
       - ./package.json:/opt/node_app/package.json
@@ -23,3 +23,7 @@ services:
 
 volumes:
   notused:
+
+networks:
+  dokploy-network:
+    external: true
