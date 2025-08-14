@@ -12,6 +12,9 @@ services:
       - dokploy-network
     restart: on-failure
     stdin_open: true
+    environment:
+      - VITE_APP_STORAGE_BACKEND_URL=http://excalidraw-storage:8080/api/v2
+      - VITE_APP_WS_SERVER_URL=http://excalidraw-room:3002
     volumes:
       - ./:/opt/node_app/app:delegated
       - ./package.json:/opt/node_app/package.json
@@ -20,10 +23,23 @@ services:
     depends_on:
       - excalidraw-storage
       - excalidraw-room
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.exclidraw-app-kfeve3-22-web.rule=Host(`draw.aimamin.com`)
+      - traefik.http.routers.exclidraw-app-kfeve3-22-web.entrypoints=web
+      - traefik.http.routers.exclidraw-app-kfeve3-22-web.middlewares=redirect-to-https@file
+      - traefik.http.routers.exclidraw-app-kfeve3-22-web.service=exclidraw-app-kfeve3-22-websecure
+      - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.rule=Host(`draw.aimamin.com`)
+      - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.entrypoints=websecure
+      - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.exclidraw-app-kfeve3-22-websecure.loadbalancer.server.port=80
+
 
   # Storage backend for saving/sharing drawings with SQLite
   excalidraw-storage:
     image: kiliandeca/excalidraw-storage-backend:latest
+    platform: linux/amd64
     container_name: excalidraw-storage
     ports:
       - "9080:8080"
@@ -41,6 +57,7 @@ services:
   # Collaboration server for real-time collaboration
   excalidraw-room:
     image: excalidraw/excalidraw-room:latest
+    platform: linux/amd64
     container_name: excalidraw-room
     ports:
       - "3002:3002"
