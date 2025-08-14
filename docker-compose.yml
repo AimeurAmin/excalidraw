@@ -1,25 +1,54 @@
 services:
+  # Your customizable Excalidraw frontend (renamed to match Dokploy)
   excalidraw:
     build:
       context: .
       args:
         - NODE_ENV=production
-    container_name: excalidraw
+    container_name: excalidraw-frontend
     ports:
       - "3003:80"
     networks:
       - dokploy-network
     restart: on-failure
     stdin_open: true
-    healthcheck:
-      disable: true
-    environment:
-      - NODE_ENV=production
     volumes:
       - ./:/opt/node_app/app:delegated
       - ./package.json:/opt/node_app/package.json
       - ./yarn.lock:/opt/node_app/yarn.lock
       - notused:/opt/node_app/app/node_modules
+    depends_on:
+      - excalidraw-storage
+      - excalidraw-room
+
+  # Storage backend for saving/sharing drawings with SQLite
+  excalidraw-storage:
+    image: kiliandeca/excalidraw-storage-backend:latest
+    container_name: excalidraw-storage
+    ports:
+      - "8081:8080"
+    networks:
+      - dokploy-network
+    restart: on-failure
+    environment:
+      - PORT=8080
+      - GLOBAL_PREFIX=/api/v2
+      - STORAGE_URI=sqlite:///app/data/excalidraw.db
+      - LOG_LEVEL=warn
+    volumes:
+      - ./data:/app/data
+
+  # Collaboration server for real-time collaboration
+  excalidraw-room:
+    image: excalidraw/excalidraw-room:latest
+    container_name: excalidraw-room
+    ports:
+      - "3002:3002"
+    networks:
+      - dokploy-network
+    restart: on-failure
+    environment:
+      - PORT=3002
 
 volumes:
   notused:
