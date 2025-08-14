@@ -5,7 +5,7 @@ services:
       context: .
       args:
         - NODE_ENV=production
-    container_name: excalidraw-frontend
+    container_name: excalidraw
     ports:
       - "3003:80"
     networks:
@@ -26,7 +26,7 @@ services:
     image: kiliandeca/excalidraw-storage-backend:latest
     container_name: excalidraw-storage
     ports:
-      - "8081:8080"
+      - "9080:8080"
     networks:
       - dokploy-network
     restart: on-failure
