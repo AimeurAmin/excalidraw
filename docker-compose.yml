@@ -1,4 +1,20 @@
 services:
+  # Redis for collaboration performance
+  redis:
+    image: redis:7-alpine
+    container_name: excalidraw-redis
+    networks:
+      - dokploy-network
+    restart: on-failure
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly no
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
   # Your customizable Excalidraw frontend (renamed to match Dokploy)
   excalidraw:
     build:
@@ -21,8 +37,12 @@ services:
       - ./yarn.lock:/opt/node_app/yarn.lock
       - notused:/opt/node_app/app/node_modules
     depends_on:
-      - excalidraw-storage
-      - excalidraw-room
+      redis:
+        condition: service_healthy
+      excalidraw-storage:
+        condition: service_started
+      excalidraw-room:
+        condition: service_started
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
@@ -34,7 +54,6 @@ services:
       - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.entrypoints=websecure
       - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.tls.certresolver=letsencrypt
       - traefik.http.services.exclidraw-app-kfeve3-22-websecure.loadbalancer.server.port=80
-
 
   # Storage backend for saving/sharing drawings with SQLite
   excalidraw-storage:
@@ -51,8 +70,12 @@ services:
       - GLOBAL_PREFIX=/api/v2
       - STORAGE_URI=sqlite:///app/data/excalidraw.db
       - LOG_LEVEL=warn
+      - REDIS_URL=redis://redis:6379  # Add Redis connection
     volumes:
       - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
 
   # Collaboration server for real-time collaboration
   excalidraw-room:
@@ -66,9 +89,15 @@ services:
     restart: on-failure
     environment:
       - PORT=3002
+      - REDIS_URL=redis://redis:6379  # Add Redis connection
+      - "REDIS_KEY_PREFIX=excalidraw:"   # Optional: namespace your keys
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   notused:
+  redis_data:  # Add Redis data volume
 
 networks:
   dokploy-network:
