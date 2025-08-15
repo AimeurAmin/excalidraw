@@ -58,8 +58,8 @@ services:
       - traefik.http.services.excalidraw-app-kfeve3-22-websecure.loadbalancer.server.port=80
 
   excalidraw-storage:
-    image: kiliandeca/excalidraw-storage-backend:latest
-    platform: linux/amd64
+    build:
+      context: https://gitlab.com/kiliandeca/excalidraw-storage-backend.git
     container_name: excalidraw-storage
     ports:
       - "9080:8080"
@@ -86,11 +86,11 @@ services:
       - traefik.http.services.excalidraw-storage.loadbalancer.server.port=8080
 
   excalidraw-room:
-    image: excalidraw/excalidraw-room:latest
-    platform: linux/amd64
+    build:
+      context: https://github.com/excalidraw/excalidraw-room.git
     container_name: excalidraw-room
     ports:
-      - "3002:3002"  # Add this line
+      - "3002:3002"
     networks:
       - dokploy-network
     restart: on-failure
@@ -111,7 +111,7 @@ services:
       - traefik.http.routers.excalidraw-room-ws.entrypoints=websecure
       - traefik.http.routers.excalidraw-room-ws.tls.certresolver=letsencrypt
       - traefik.http.routers.excalidraw-room-ws.priority=100
-      - traefik.http.routers.excalidraw-room-ws.service=excalidraw-room-service 
+      - traefik.http.routers.excalidraw-room-ws.service=excalidraw-room-service
       - traefik.http.services.excalidraw-room-service.loadbalancer.server.port=3002
 
 volumes:
