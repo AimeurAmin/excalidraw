@@ -93,12 +93,12 @@ services:
       - dokploy-network
     restart: on-failure
     environment:
-      - PORT=3002
-      - REDIS_URL=redis://redis:6379
-      - "REDIS_KEY_PREFIX=excalidraw:"
-      - NODE_ENV=production
-      - WS_HEARTBEAT_INTERVAL=25000
-      - WS_HEARTBEAT_TIMEOUT=60000
+      PORT: 3002
+      REDIS_URL: redis://redis:6379
+      REDIS_KEY_PREFIX: "excalidraw:"
+      NODE_ENV: production
+      WS_HEARTBEAT_INTERVAL: 25000
+      WS_HEARTBEAT_TIMEOUT: 60000
     depends_on:
       redis:
         condition: service_healthy
