@@ -1,5 +1,4 @@
 services:
-  # Redis for collaboration performance
   redis:
     image: redis:7-alpine
     container_name: excalidraw-redis
@@ -15,12 +14,13 @@ services:
       timeout: 3s
       retries: 3
 
-  # Your customizable Excalidraw frontend (renamed to match Dokploy)
   excalidraw:
     build:
       context: .
       args:
         - NODE_ENV=production
+        - VITE_APP_STORAGE_BACKEND_URL=https://draw.aimamin.com/api/v2
+        - VITE_APP_WS_SERVER_URL=https://draw.aimamin.com
     container_name: excalidraw
     ports:
       - "3003:80"
@@ -29,8 +29,8 @@ services:
     restart: on-failure
     stdin_open: true
     environment:
-      - VITE_APP_STORAGE_BACKEND_URL=http://excalidraw-storage:8080/api/v2
-      - VITE_APP_WS_SERVER_URL=http://excalidraw-room:3002
+      - VITE_APP_ENABLE_TRACKING=false
+      - VITE_APP_DISABLE_FIREBASE=true
     volumes:
       - ./:/opt/node_app/app:delegated
       - ./package.json:/opt/node_app/package.json
@@ -55,7 +55,6 @@ services:
       - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.tls.certresolver=letsencrypt
       - traefik.http.services.exclidraw-app-kfeve3-22-websecure.loadbalancer.server.port=80
 
-  # Storage backend for saving/sharing drawings with SQLite
   excalidraw-storage:
     image: kiliandeca/excalidraw-storage-backend:latest
     platform: linux/amd64
@@ -70,34 +69,51 @@ services:
       - GLOBAL_PREFIX=/api/v2
       - STORAGE_URI=sqlite:///app/data/excalidraw.db
       - LOG_LEVEL=warn
-      - REDIS_URL=redis://redis:6379  # Add Redis connection
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./data:/app/data
     depends_on:
       redis:
         condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.exclidraw-storage.rule=Host(`draw.aimamin.com`) && PathPrefix(`/api/v2`)
+      - traefik.http.routers.exclidraw-storage.entrypoints=websecure
+      - traefik.http.routers.exclidraw-storage.tls.certresolver=letsencrypt
+      - traefik.http.services.exclidraw-storage.loadbalancer.server.port=8080
 
-  # Collaboration server for real-time collaboration
   excalidraw-room:
     image: excalidraw/excalidraw-room:latest
     platform: linux/amd64
     container_name: excalidraw-room
-    ports:
-      - "3002:3002"
     networks:
       - dokploy-network
     restart: on-failure
     environment:
       - PORT=3002
-      - REDIS_URL=redis://redis:6379  # Add Redis connection
-      - "REDIS_KEY_PREFIX=excalidraw:"   # Optional: namespace your keys
+      - REDIS_URL=redis://redis:6379
+      - "REDIS_KEY_PREFIX=excalidraw:"
+      - NODE_ENV=production
+      - WS_HEARTBEAT_INTERVAL=25000
+      - WS_HEARTBEAT_TIMEOUT=60000
     depends_on:
       redis:
         condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.exclidraw-room.rule=Host(`draw.aimamin.com`) && PathPrefix(`/socket.io/`)
+      - traefik.http.routers.exclidraw-room.entrypoints=websecure
+      - traefik.http.routers.exclidraw-room.tls.certresolver=letsencrypt
+      - traefik.http.services.exclidraw-room.loadbalancer.server.port=3002
+      - traefik.http.middlewares.exclidraw-ws.headers.customrequestheaders.Upgrade=websocket
+      - traefik.http.middlewares.exclidraw-ws.headers.customrequestheaders.Connection=upgrade
+      - traefik.http.routers.exclidraw-room.middlewares=exclidraw-ws
 
 volumes:
   notused:
-  redis_data:  # Add Redis data volume
+  redis_data:
 
 networks:
   dokploy-network:
