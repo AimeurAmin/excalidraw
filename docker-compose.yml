@@ -46,14 +46,14 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.exclidraw-app-kfeve3-22-web.rule=Host(`draw.aimamin.com`)
-      - traefik.http.routers.exclidraw-app-kfeve3-22-web.entrypoints=web
-      - traefik.http.routers.exclidraw-app-kfeve3-22-web.middlewares=redirect-to-https@file
-      - traefik.http.routers.exclidraw-app-kfeve3-22-web.service=exclidraw-app-kfeve3-22-websecure
-      - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.rule=Host(`draw.aimamin.com`)
-      - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.entrypoints=websecure
-      - traefik.http.routers.exclidraw-app-kfeve3-22-websecure.tls.certresolver=letsencrypt
-      - traefik.http.services.exclidraw-app-kfeve3-22-websecure.loadbalancer.server.port=80
+      - traefik.http.routers.excalidraw-app-kfeve3-22-web.rule=Host(`draw.aimamin.com`)
+      - traefik.http.routers.excalidraw-app-kfeve3-22-web.entrypoints=web
+      - traefik.http.routers.excalidraw-app-kfeve3-22-web.middlewares=redirect-to-https@file
+      - traefik.http.routers.excalidraw-app-kfeve3-22-web.service=excalidraw-app-kfeve3-22-websecure
+      - traefik.http.routers.excalidraw-app-kfeve3-22-websecure.rule=Host(`draw.aimamin.com`)
+      - traefik.http.routers.excalidraw-app-kfeve3-22-websecure.entrypoints=websecure
+      - traefik.http.routers.excalidraw-app-kfeve3-22-websecure.tls.certresolver=letsencrypt
+      - traefik.http.services.excalidraw-app-kfeve3-22-websecure.loadbalancer.server.port=80
 
   excalidraw-storage:
     image: kiliandeca/excalidraw-storage-backend:latest
@@ -78,15 +78,17 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.exclidraw-storage.rule=Host(`draw.aimamin.com`) && PathPrefix(`/api/v2`)
-      - traefik.http.routers.exclidraw-storage.entrypoints=websecure
-      - traefik.http.routers.exclidraw-storage.tls.certresolver=letsencrypt
-      - traefik.http.services.exclidraw-storage.loadbalancer.server.port=8080
+      - traefik.http.routers.excalidraw-storage.rule=Host(`draw.aimamin.com`) && PathPrefix(`/api/v2`)
+      - traefik.http.routers.excalidraw-storage.entrypoints=websecure
+      - traefik.http.routers.excalidraw-storage.tls.certresolver=letsencrypt
+      - traefik.http.services.excalidraw-storage.loadbalancer.server.port=8080
 
   excalidraw-room:
     image: excalidraw/excalidraw-room:latest
     platform: linux/amd64
     container_name: excalidraw-room
+    ports:
+      - "3002:3002"  # Add this line
     networks:
       - dokploy-network
     restart: on-failure
@@ -103,13 +105,12 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      - traefik.http.routers.exclidraw-room.rule=Host(`draw.aimamin.com`) && PathPrefix(`/socket.io/`)
-      - traefik.http.routers.exclidraw-room.entrypoints=websecure
-      - traefik.http.routers.exclidraw-room.tls.certresolver=letsencrypt
-      - traefik.http.services.exclidraw-room.loadbalancer.server.port=3002
-      - traefik.http.middlewares.exclidraw-ws.headers.customrequestheaders.Upgrade=websocket
-      - traefik.http.middlewares.exclidraw-ws.headers.customrequestheaders.Connection=upgrade
-      - traefik.http.routers.exclidraw-room.middlewares=exclidraw-ws
+      - traefik.http.routers.excalidraw-room-ws.rule=Host(`draw.aimamin.com`) && PathPrefix(`/socket.io`)
+      - traefik.http.routers.excalidraw-room-ws.entrypoints=websecure
+      - traefik.http.routers.excalidraw-room-ws.tls.certresolver=letsencrypt
+      - traefik.http.routers.excalidraw-room-ws.priority=100
+      - traefik.http.routers.excalidraw-room-ws.service=excalidraw-room-service 
+      - traefik.http.services.excalidraw-room-service.loadbalancer.server.port=3002
 
 volumes:
   notused:
