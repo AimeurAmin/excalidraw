@@ -29,6 +29,8 @@ services:
     restart: on-failure
     stdin_open: true
     environment:
+      - VITE_APP_STORAGE_BACKEND_URL=https://draw.aimamin.com/api/v2
+      - VITE_APP_WS_SERVER_URL=https://draw.aimamin.com
       - VITE_APP_ENABLE_TRACKING=false
       - VITE_APP_DISABLE_FIREBASE=true
     volumes:
