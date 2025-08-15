@@ -59,7 +59,7 @@ services:
 
   excalidraw-storage:
     build:
-      context: https://gitlab.com/kiliandeca/excalidraw-storage-backend.git
+      context: https://github.com/alswl/excalidraw-storage-backend.git
     container_name: excalidraw-storage
     ports:
       - "9080:8080"
